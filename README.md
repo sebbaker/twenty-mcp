@@ -2,6 +2,8 @@
 
 MCP server for [Twenty CRM](https://twenty.com), exposing tools for companies, people, opportunities, notes, tasks, activities, search, bulk operations, and custom objects.
 
+Originally adapted from [vomos-ua/n8n-nodes-twenty](https://github.com/vomos-ua/n8n-nodes-twenty).
+
 ## Transport
 
 This server runs on **streamable-http** (remote MCP) and serves a single endpoint:

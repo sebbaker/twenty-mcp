@@ -28,3 +28,6 @@ coverage/
 
 # Claude Code
 .claude/
+
+
+.env
