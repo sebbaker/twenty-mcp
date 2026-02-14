@@ -1,0 +1,9 @@
+services:
+  twenty-crm-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: twenty-crm-mcp
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
