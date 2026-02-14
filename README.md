@@ -120,6 +120,7 @@ If those env vars are missing, the integration suite is skipped.
 - Note: create/get/list/update/delete
 - Task: create/get/list/update/delete
 - Activity: create/get/list/update/delete
+- Engagement: get messages/calendar events/activities by company or person
 - Bulk: create/update/delete
 - Search: cross-object search
 - Custom Object: create/get/list/update/delete

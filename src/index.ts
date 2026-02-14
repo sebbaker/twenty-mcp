@@ -10,6 +10,7 @@ import { registerActivityTools } from "./tools/activity.js";
 import { registerBulkTools } from "./tools/bulk.js";
 import { registerCompanyTools } from "./tools/company.js";
 import { registerCustomObjectTools } from "./tools/custom-object.js";
+import { registerEngagementTools } from "./tools/engagement.js";
 import { registerNoteTools } from "./tools/note.js";
 import { registerOpportunityTools } from "./tools/opportunity.js";
 import { registerPersonTools } from "./tools/person.js";
@@ -34,6 +35,7 @@ function createServer(client: TwentyCrmClient): McpServer {
   registerBulkTools(server, client);
   registerSearchTools(server, client);
   registerCustomObjectTools(server, client);
+  registerEngagementTools(server, client);
 
   return server;
 }
