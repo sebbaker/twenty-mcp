@@ -7,6 +7,36 @@ import {
   transformNoteFields,
 } from "../transforms.js";
 
+const blockNoteBlockSchema: z.ZodType<{
+  type: "heading" | "paragraph";
+  children?: Array<{
+    type: "heading" | "paragraph";
+    children?: Array<unknown>;
+  }>;
+}> = z
+  .object({
+    type: z.enum(["heading", "paragraph"]),
+    children: z.array(z.lazy(() => blockNoteBlockSchema)).optional(),
+  })
+  .passthrough();
+
+const blockNoteSchema = z
+  .object({
+    blocks: z.array(blockNoteBlockSchema),
+  })
+  .passthrough();
+
+function stringifyBlockNoteInBodyV2(fields: Record<string, unknown>): void {
+  if (
+    fields.bodyV2 &&
+    typeof fields.bodyV2 === "object" &&
+    (fields.bodyV2 as Record<string, unknown>).blocknote
+  ) {
+    const bodyV2 = fields.bodyV2 as Record<string, unknown>;
+    bodyV2.blocknote = JSON.stringify(bodyV2.blocknote);
+  }
+}
+
 export function registerNoteTools(
   server: McpServer,
   client: TwentyCrmClient,
@@ -18,12 +48,19 @@ export function registerNoteTools(
         'Create a new note in Twenty CRM. Note: the "body" field is not supported by the Twenty CRM API.',
       inputSchema: {
         title: z.string().describe("Note title"),
+        bodyV2: z
+          .object({
+            blocknote: blockNoteSchema.optional(),
+          })
+          .optional(),
         position: z.number().optional().describe("Note position/order"),
       },
     },
     async (args) => {
       try {
-        const body = transformNoteFields(cleanObject(args));
+        const cleaned = cleanObject(args) as Record<string, unknown>;
+        stringifyBlockNoteInBodyV2(cleaned);
+        const body = transformNoteFields(cleaned);
         const result = await client.request("POST", "/rest/notes", body);
         return {
           content: [
@@ -139,13 +176,20 @@ export function registerNoteTools(
       inputSchema: {
         id: z.string().describe("The note ID to update"),
         title: z.string().optional().describe("Note title"),
+        bodyV2: z
+          .object({
+            blocknote: blockNoteSchema.optional(),
+          })
+          .optional(),
         position: z.number().optional().describe("Note position/order"),
       },
     },
     async (args) => {
       try {
         const { id, ...fields } = args;
-        const body = transformNoteFields(cleanObject(fields));
+        const cleaned = cleanObject(fields) as Record<string, unknown>;
+        stringifyBlockNoteInBodyV2(cleaned);
+        const body = transformNoteFields(cleaned);
         const result = await client.request("PUT", `/rest/notes/${id}`, body);
         return {
           content: [

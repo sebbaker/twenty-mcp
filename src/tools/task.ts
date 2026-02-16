@@ -3,6 +3,25 @@ import { z } from "zod";
 import type { TwentyCrmClient } from "../client.js";
 import { buildFilterQuery, cleanObject } from "../transforms.js";
 
+const blockNoteBlockSchema: z.ZodType<{
+  type: "heading" | "paragraph";
+  children?: Array<{
+    type: "heading" | "paragraph";
+    children?: Array<unknown>;
+  }>;
+}> = z
+  .object({
+    type: z.enum(["heading", "paragraph"]),
+    children: z.array(z.lazy(() => blockNoteBlockSchema)).optional(),
+  })
+  .passthrough();
+
+const blockNoteSchema = z
+  .object({
+    blocks: z.array(blockNoteBlockSchema),
+  })
+  .passthrough();
+
 export function registerTaskTools(
   server: McpServer,
   client: TwentyCrmClient,
@@ -13,7 +32,11 @@ export function registerTaskTools(
       description: "Create a new task in Twenty CRM",
       inputSchema: {
         title: z.string().describe("Task title"),
-        body: z.string().optional().describe("Task description"),
+        bodyV2: z
+          .object({
+            blocknote: blockNoteSchema.optional(),
+          })
+          .optional(),
         status: z
           .enum(["TODO", "IN_PROGRESS", "DONE"])
           .optional()
@@ -26,6 +49,14 @@ export function registerTaskTools(
     async (args) => {
       try {
         const body = cleanObject(args);
+        if (
+          body.bodyV2 &&
+          typeof body.bodyV2 === "object" &&
+          (body.bodyV2 as Record<string, unknown>).blocknote
+        ) {
+          const bodyV2 = body.bodyV2 as Record<string, unknown>;
+          bodyV2.blocknote = JSON.stringify(bodyV2.blocknote);
+        }
         const result = await client.request("POST", "/rest/tasks", body);
         return {
           content: [
