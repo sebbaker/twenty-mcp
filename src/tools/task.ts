@@ -22,6 +22,17 @@ const blockNoteSchema = z
   })
   .passthrough();
 
+function stringifyBlockNoteInBodyV2(fields: Record<string, unknown>): void {
+  if (
+    fields.bodyV2 &&
+    typeof fields.bodyV2 === "object" &&
+    (fields.bodyV2 as Record<string, unknown>).blocknote
+  ) {
+    const bodyV2 = fields.bodyV2 as Record<string, unknown>;
+    bodyV2.blocknote = JSON.stringify(bodyV2.blocknote);
+  }
+}
+
 export function registerTaskTools(
   server: McpServer,
   client: TwentyCrmClient,
@@ -48,15 +59,8 @@ export function registerTaskTools(
     },
     async (args) => {
       try {
-        const body = cleanObject(args);
-        if (
-          body.bodyV2 &&
-          typeof body.bodyV2 === "object" &&
-          (body.bodyV2 as Record<string, unknown>).blocknote
-        ) {
-          const bodyV2 = body.bodyV2 as Record<string, unknown>;
-          bodyV2.blocknote = JSON.stringify(bodyV2.blocknote);
-        }
+        const body = cleanObject(args) as Record<string, unknown>;
+        stringifyBlockNoteInBodyV2(body);
         const result = await client.request("POST", "/rest/tasks", body);
         return {
           content: [
@@ -179,6 +183,11 @@ export function registerTaskTools(
         id: z.string().describe("The task ID to update"),
         title: z.string().optional().describe("Task title"),
         body: z.string().optional().describe("Task description"),
+        bodyV2: z
+          .object({
+            blocknote: blockNoteSchema.optional(),
+          })
+          .optional(),
         status: z
           .enum(["TODO", "IN_PROGRESS", "DONE"])
           .optional()
@@ -191,7 +200,8 @@ export function registerTaskTools(
     async (args) => {
       try {
         const { id, ...fields } = args;
-        const body = cleanObject(fields);
+        const body = cleanObject(fields) as Record<string, unknown>;
+        stringifyBlockNoteInBodyV2(body);
         const result = await client.request("PUT", `/rest/tasks/${id}`, body);
         return {
           content: [
